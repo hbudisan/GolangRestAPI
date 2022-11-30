@@ -1,0 +1,223 @@
+01. Website Golang
+
+	www.golang.org 		-> go.dev
+	play.golang.org 	-> go.dev/play/
+	www.golang.org/dl
+	
+02. Trend Programming Language
+
+=== Install Go ===
+
+01. Double Click go1.19.3.windows-amd64.msi
+
+02. Check Go Installation
+
+	$ go version
+		go version go1.19.3 windows/amd64
+		
+03. Go Help + Go Env
+
+	$ go help
+	$ go help build
+
+	$ go env
+		set GO111MODULE=
+		set GOARCH=amd64
+		set GOBIN=
+		set GOCACHE=C:\Users\student\AppData\Local\go-build
+		set GOENV=C:\Users\student\AppData\Roaming\go\env
+		...
+		
+04. Create Working Directory
+
+	$ mkdir c:\labs
+	
+=== Create Hello World Program ===
+
+01. Menggunakan Notepad. Buat file c:\labs\helloworld.go
+
+	package main
+	
+	import (
+		"fmt"
+	)
+	
+	func main() {
+		fmt.Println("Hello World Naruto !!!")
+	}
+
+02. Run Program
+
+	$ cd c:\labs\
+	$ go run helloworld.go
+	
+		Hello World Naruto !!!
+
+03. Build Program
+
+	$ cd c:\labs\
+	$ go build helloworld.go
+	$ dir 
+		helloworld.go
+		helloworld.exe
+	$ helloworld.exe
+	
+		Hello World Naruto !!!
+
+=== Visual Studio Code ===
+
+01. Website
+
+	code.visualstudio.com
+
+02. Install Visual Studio Code
+	- Double Click VSCodeSetup-x64-1.73.1.exe
+	- Enable Create Desktop Icon
+	
+03. Install Extension : Go
+	- Klik Extension
+	- Search : Go
+	
+04. Install Add-on Utility
+	- View -> Command Pallete
+	- Go: Install/Update Tools
+	- Install All
+	
+		Installing 7 tools at C:\Users\student\go\bin in module mode.
+		  gotests
+		  gomodifytags
+		  impl
+		  goplay
+		  dlv
+		  staticcheck
+		  gopls
+
+		Installing github.com/cweill/gotests/gotests@v1.6.0 (C:\Users\student\go\bin\gotests.exe) SUCCEEDED
+		Installing github.com/fatih/gomodifytags@v1.16.0 (C:\Users\student\go\bin\gomodifytags.exe) SUCCEEDED
+		Installing github.com/josharian/impl@v1.1.0 (C:\Users\student\go\bin\impl.exe) SUCCEEDED
+		Installing github.com/haya14busa/goplay/cmd/goplay@v1.0.0 (C:\Users\student\go\bin\goplay.exe) SUCCEEDED
+		Installing github.com/go-delve/delve/cmd/dlv@latest (C:\Users\student\go\bin\dlv.exe) SUCCEEDED
+		Installing github.com/go-delve/delve/cmd/dlv@latest (C:\Users\student\go\bin\dlv.exe) SUCCEEDED
+		Installing honnef.co/go/tools/cmd/staticcheck@latest (C:\Users\student\go\bin\staticcheck.exe) SUCCEEDED
+		Installing honnef.co/go/tools/cmd/staticcheck@latest (C:\Users\student\go\bin\staticcheck.exe) SUCCEEDED
+
+05. Buka program Hello World yg telah dibuat sebelumnya
+	- Klik Explorer
+	- Buka Folder : c:\labs
+	- Buka helloworld.go
+	
+06. Run Program
+	- Buka terminal
+	- $ go run .\helloworld.go
+	
+07. Install Extension : Code Runner
+
+=== Primitive Data Types ===
+
+01. Buat folder di labs\01-primitive-data-types
+	- Aktifkan folder tersebut sebagai project folder
+
+02. Buat file labs\01-primitive-data-types\main.go
+
+	package main
+
+	import "fmt"
+
+	func variable_declaration() {
+		// Declaring Variable
+		var myStr string = "Hello"
+		var myInt int = 100
+		var myFloat float64 = 45.12
+		fmt.Println(myStr, myInt, myFloat)
+
+		// Multiple Declarations
+		var (
+			employeeId          int    = 5
+			firstName, lastName string = "Uzumaki", "Naruto"
+		)
+		fmt.Println(employeeId, firstName, lastName)
+
+		// Short Declarations
+		name := "Bill Gates"
+		age, salary, isProgrammer := 35, 50000.0, true
+		fmt.Println(name, age, salary, isProgrammer)
+	}
+
+	func type_inference() {
+		// Type inference
+		var name = "Steve Jobs"
+		fmt.Printf("Variable 'name' typenya %T\n", name)
+
+		// multiple variable declaration
+		var firstName, lastName, age, salary = "James", "Bond", 30, 70000.0
+		fmt.Printf("firstName: %T, lastName: %T, age: %T, salary: %T \n", firstName, lastName, age, salary)
+	}
+
+	func constant_declaration() {
+		// Untyped Constant
+		const myFavLanguage = "Kotlin"
+		const sunRisesInTheEast = true
+
+		// Typed Constant
+		const typedInt int = 100
+		const typedStr string = "Hi"
+
+		// Multiple Declaration
+		const country, code = "Indonesia", 62
+		const (
+			employeeId string  = "E101"
+			salary     float64 = 50000.0
+		)
+
+		fmt.Println(myFavLanguage, sunRisesInTheEast, typedInt, typedStr, country, code, employeeId, salary)
+		//salary = 60000
+	}
+
+	func ioata_declaration() {
+		const (
+			first = iota
+			second
+		)
+
+		const (
+			third = iota
+			four
+		)
+		fmt.Println(first, second, third, four)
+	}
+
+	func pointer_declaration() {
+		var a = 5.67
+		var p1 = &a
+		var p2 *float64 = &a
+
+		fmt.Println("Nilai yg disimpan variable a: ", a)
+		fmt.Println("Alamat memory a: ", &a)
+		fmt.Println("Nilai yg disimpan variable p1: ", p1)
+		fmt.Println("Nilai yg disimpan variable p2: ", p2)
+		a = 7.77
+		fmt.Println("Nilai yg disimpan variable a: ", *p2)
+	}
+
+	func main() {
+		fmt.Println("Primitive Data Types")
+		// variable_declaration()
+		// type_inference()
+		// constant_declaration()
+		// ioata_declaration()
+		pointer_declaration()
+	}
+
+=== Collections ===
+
+01. Buat folder di labs\02-collections
+	- Aktifkan folder tersebut sebagai project folder
+
+02. Buat file labs\02-collections\main.go	
+	
+	
+
+
+
+
+

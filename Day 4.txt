@@ -56,6 +56,233 @@
 		http.ListenAndServe(":8080", nil)
 	}
 
+--- Website DB Part 2 
+
+01. Buat folder 13-webdb2
+	- Aktifkan folder 13-webdb2 di Visual Studio Code
+	
+	copy isi 12-webdb1 ke 13-webdb2
+
+02. Edit file form\index.html
+
+	{{ define "Index" }}
+	{{ template "Header" }}
+	{{ template "Menu" }}
+	<table border="1">
+		<thead>
+			<tr>
+				<td>ID</td>
+				<td>Name</td>
+				<td>Salary</td>
+				<td>View</td>
+			</tr>
+		</thead>
+		<tbody>
+			{{ range . }}
+			<tr>
+				<td>{{ .Id }}</td>
+				<td> {{ .Name }} </td>
+				<td>{{ .Salary }} </td>
+				<td><a href="/show?id={{ .Id }}">View</a></td>
+			</tr>
+			{{ end }}
+		</tbody>
+	</table>
+	{{ template "Footer" }}
+	{{ end }}
+
+03. Buat file form\Menu.html
+
+	{{ define "Menu" }}
+	<a href="/">HOME</a>
+	{{ end }}
+
+04. Buat file form\Show.html
+
+	{{ define "Index" }}
+	{{ template "Header" }}
+	{{ template "Menu" }}
+	<table border="1">
+		<thead>
+			<tr>
+				<td>ID</td>
+				<td>Name</td>
+				<td>Salary</td>
+				<td>View</td>
+			</tr>
+		</thead>
+		<tbody>
+			{{ range . }}
+			<tr>
+				<td>{{ .Id }}</td>
+				<td> {{ .Name }} </td>
+				<td>{{ .Salary }} </td>
+				<td><a href="/show?id={{ .Id }}">View</a></td>
+			</tr>
+			{{ end }}
+		</tbody>
+	</table>
+	{{ template "Footer" }}
+	{{ end }}
+
+05. Edit main.go
+
+	func Show(w http.ResponseWriter, r *http.Request) {
+		db := dbConn()
+		nId := r.URL.Query().Get("id")
+		selDB, err := db.Query("SELECT * FROM employees WHERE id=?", nId)
+		if err != nil {
+			panic(err.Error())
+		}
+		employee := Employee{}
+		for selDB.Next() {
+			err = selDB.Scan(&employee.Id, &employee.Name, &employee.Salary)
+			if err != nil {
+				panic(err.Error())
+			}
+		}
+		tmpl.ExecuteTemplate(w, "Show", employee)
+		defer db.Close()
+	}
+
+	func main() {
+		log.Println("Server started on: http://localhost:8080")
+		http.HandleFunc("/", Index)
+		http.HandleFunc("/show", Show)
+		http.ListenAndServe(":8080", nil)
+	}
+
+06. Test
+	- Buka Web Browser
+	- http://localhost:8080
+	
+--- Website DB Part 3
+
+01. Buat folder 14-webdb3
+	- Aktifkan folder 14-webdb3 di Visual Studio Code
+	
+	copy isi 13-webdb2 ke 14-webdb3
+	
+02. Rename form/*.html => form/*.tmpl	
+	
+03. Edit form/Index.tmpl	
+	
+	{{ define "Index" }}
+	  {{ template "Header" }}
+		{{ template "Menu"  }}
+		<h2> Registered </h2>
+		<table border="1">
+		  <thead>
+		  <tr>
+			<td>ID</td>
+			<td>Name</td>
+			<td>Salary</td>
+			<td>View</td>
+			<td>Edit</td>
+			<td>Delete</td>
+		  </tr>
+		   </thead>
+		   <tbody>
+		{{ range . }}
+		  <tr>
+			<td>{{ .Id }}</td>
+			<td> {{ .Name }} </td>
+			<td>{{ .Salary }} </td> 
+			<td><a href="/show?id={{ .Id }}">View</a></td>
+			<td><a href="/edit?id={{ .Id }}">Edit</a></td>
+			<td><a href="/remove?id={{ .Id }}">Delete</a><td>
+		  </tr>
+		{{ end }}
+		   </tbody>
+		</table>
+	  {{ template "Footer" }}
+	{{ end }}	
+	
+04. Edit form/Menu.tmpl	
+	
+	{{ define "Menu" }}
+	<a href="/">HOME</a> | 
+	<a href="/new">NEW</a>
+	{{ end }}	
+	
+05. Edit form/Show.tmpl		
+
+	{{ define "Show" }}
+	  {{ template "Header" }}
+		{{ template "Menu"  }}
+		<h2> Register {{ .Id }} </h2>
+		  <p>Name: {{ .Name }}</p>
+		  <p>Salary:  {{ .Salary }}</p>
+		  <br /> <p><a href="/edit?id={{ .Id }}">Edit</a></p>
+	  {{ template "Footer" }}
+	{{ end }}
+
+06. Buat file form/Edit.tmpl	
+
+	{{ define "Edit" }}
+	  {{ template "Header" }}
+		{{ template "Menu" }} 
+	   <h2>Edit Name and Salary</h2>  
+		<form method="POST" action="update">
+		  <input type="hidden" name="uid" value="{{ .Id }}" />
+		  <label> Name </label><input type="text" name="name" value="{{ .Name }}"  /><br />
+		  <label> Salary </label><input type="text" name="salary" value="{{ .Salary }}"  /><br />
+		  <input type="submit" value="Save user" />
+		</form><br />    
+	  {{ template "Footer" }}
+	{{ end }}
+
+07. Buat file form/New.tmpl	
+
+	{{ define "New" }}
+	  {{ template "Header" }}
+		{{ template "Menu" }} 
+	   <h2>New Name and Salary</h2>  
+		<form method="POST" action="insert">
+		  <label> Name </label><input type="text" name="name" /><br />
+		  <label> Salary </label><input type="text" name="salary" /><br />
+		  <input type="submit" value="Save user" />
+		</form>
+	  {{ template "Footer" }}
+	{{ end }}
+
+08. Edit file main.go
+
+	func New(w http.ResponseWriter, r *http.Request) {
+		tmpl.ExecuteTemplate(w, "New", nil)
+	}
+
+	func Insert(w http.ResponseWriter, r *http.Request) {
+		db := dbConn()
+		if r.Method == "POST" {
+			name := r.FormValue("name")
+			salary := r.FormValue("salary")
+			insForm, err := db.Prepare("INSERT INTO Employees(name, salary) VALUES(?,?)")
+			if err != nil {
+				panic(err.Error())
+			}
+			insForm.Exec(name, salary)
+			log.Println("INSERT: Name: " + name + " | Salary: " + salary)
+		}
+		defer db.Close()
+		http.Redirect(w, r, "/", http.StatusMovedPermanently)
+	}
+
+	func main() {
+		log.Println("Server started on: http://localhost:8080")
+		http.HandleFunc("/", Index)
+		http.HandleFunc("/show", Show)
+		http.HandleFunc("/new", New)
+		http.HandleFunc("/insert", Insert)
+		http.ListenAndServe(":8080", nil)
+	}
+
+09. Run and Test
+	- Buka Web Browser
+	- http://localhost:8080
+	- Tambahkan pegawai baru
+
+
 
 
 

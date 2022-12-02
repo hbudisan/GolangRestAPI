@@ -1,0 +1,613 @@
+01. Buat Directory
+
+	08-modules\packer
+	              numbers
+				  strings
+					 greetings
+
+02. Open folder 08-modules\packer
+    di Visual Studio Code
+
+03. Buat file go.mod
+
+	$ cd 08-modules\packer
+	$ go mod init example.com/packer
+
+	Terbentuk file go.mod
+
+04. Buat file 08-modules\packer\numbers\prime.go
+
+	package numbers
+
+	import "math"
+
+	func IsPrime(num int) bool {
+		for i := 2; i < int(math.Floor(math.Sqrt(float64(num)))); i++ {
+			if num%i == 0 {
+				return false
+			}
+		}
+		return num > 1
+	}
+
+05. Buat file 08-modules\packer\strings\reverse.go
+
+	package strings
+
+	func Reverse(s string) string {
+		runes := []rune(s)
+		reversedRunes := reverseRunes(runes)
+		return string(reversedRunes)
+	}
+
+06. Buat file 08-modules\packer\strings\reverse_runes.go
+
+	package strings
+
+	func reverseRunes(r []rune) []rune {
+		for i, j := 0, len(r)-1; i < j; i, j = i+1, j-1 {
+			r[i], r[j] = r[j], r[i]
+		}
+		return r
+	}
+
+07. Buat file 08-modules\packer\strings\greetings\texts.go
+
+	package greetings
+
+	const (
+		WelcomeText = "Hello World to Golang"
+		MorningText = "Good Morning"
+		EveningText = "Good Evening"
+	)
+
+08. Buat file 08-modules\packer\main.go
+
+	package main
+
+	import (
+		"fmt"
+
+		str "strings" // Package alias
+
+		"example.com/packer/numbers"
+		"example.com/packer/strings"
+		"example.com/packer/strings/greetings"
+	)
+
+	func main() {
+		fmt.Println(numbers.IsPrime(19))
+		fmt.Println(greetings.WelcomeText)
+		fmt.Println(strings.Reverse("Kasur Nababan Rusak"))
+		fmt.Println(str.Count("Go emang luar biasa, Go Go Go", "Go"))
+	}
+
+09. Build
+
+	$ cd 08-modules\packer\
+	$ go build
+	$ dir
+		packer.exe
+	$ packer.exe
+		true
+		Hello World to Golang
+		kasuR nababaN rusaK
+		4	
+
+=== Package Third Party ===
+
+01. Review Package
+
+	rsc.io/quote	=> 	https://pkg.go.dev/rsc.io/quote
+
+02. Buat Directory
+
+	08-modules\thirdparty
+
+03. Open folder 08-modules\thirdparty
+    di Visual Studio Code
+
+04. Buat file go.mod
+
+	$ cd 08-modules\thirdparty
+	$ go mod init example.com/thirdparty
+
+05. Manually installing package
+
+	$ cd 08-modules\thirdparty
+	$ go get rsc.io/quote
+
+06. Buat file thirdparty\main.go
+	
+	package main
+
+	import (
+		"fmt"
+
+		"rsc.io/quote"
+	)
+
+	func main() {
+		fmt.Println(quote.Go())
+	}
+
+07. Syncronize go.mod
+
+	$ cd 08-modules\thirdparty
+	$ go mod tidy
+
+	package rsc.io/quote yg semula indirect menjadi direct
+	
+=== Go and RDBMS ===	
+	
+01. Website
+	- mariadb.org
+	- dBeaver.io
+	
+02. Install MariaDB
+	- mariadb-10.9.2-winx64.msi
+	- username : root
+	  password : Welcome1
+	- Port : 3306
+
+03. Configure Env Variable
+
+	PATH=C:\Program Files\MariaDB 10.9\bin
+
+	$ echo %PATH%
+
+04. Create Database
+
+	$ mysql -u root -p
+		Enter password: Welcome1
+		
+	MariaDB [(none)]> show databases;
+
+		+--------------------+
+		| Database           |
+		+--------------------+
+		| information_schema |
+		| mysql              |
+		| performance_schema |
+		| sys                |
+		+--------------------+
+
+	MariaDB [(none)]> create database hrd;
+	MariaDB [(none)]> show databases;
+		+--------------------+
+		| Database           |
+		+--------------------+
+		| hrd                |
+		| information_schema |
+		| mysql              |
+		| performance_schema |
+		| sys                |
+		+--------------------+
+		5 rows in set (0.001 sec)
+		
+	MariaDB [(none)]> use hrd;
+	
+	MariaDB [hrd]> create table cities (
+					 id int primary key,
+					 name varchar(25),
+					 population int
+					);
+					
+ 	MariaDB [hrd]> show tables;
+	MariaDB [hrd]> describe cities;
+		+------------+-------------+------+-----+---------+-------+
+		| Field      | Type        | Null | Key | Default | Extra |
+		+------------+-------------+------+-----+---------+-------+
+		| id         | int(11)     | NO   | PRI | NULL    |       |
+		| name       | varchar(25) | YES  |     | NULL    |       |
+		| population | int(11)     | YES  |     | NULL    |       |
+		+------------+-------------+------+-----+---------+-------+
+		3 rows in set (0.052 sec)
+
+	MariaDB [hrd]> select * from cities;
+	MariaDB [hrd]> insert into cities values(1,'Jakarta',350000);
+	MariaDB [hrd]> insert into cities values(2,'Semarang',150000);
+	MariaDB [hrd]> insert into cities values(3,'Surabaya',250000);
+	MariaDB [hrd]> select * from cities;
+		+----+----------+------------+
+		| id | name     | population |
+		+----+----------+------------+
+		|  1 | Jakarta  |     350000 |
+		|  2 | Semarang |     150000 |
+		|  3 | Surabaya |     250000 |
+		+----+----------+------------+
+		3 rows in set (0.000 sec)
+		
+05. Install DBeaver
+	- dbeaver-ce-22.2.0-x86_64-setup.exe
+
+--- Buat Program Go -> Connect ke Database
+
+01. Buat folder di labs\09-gomariadb
+	- Aktifkan folder tersebut sebagai project folder
+
+	$ cd 09-gomariadb
+	$ go mod init example.com/gomariadb
+	$ go get github.com/go-sql-driver/mysql
+	
+02. Buat folder di labs\09-gomariadb\crud
+	
+03. Buat file labs\09-gomariadb\crud\connect.go
+
+	package crud
+
+	import (
+		"database/sql"
+
+		_ "github.com/go-sql-driver/mysql"
+	)
+
+	func Connect() (*sql.DB, error) {
+		db, err := sql.Open("mysql", "root:Welcome1@tcp(localhost:3306)/hrd")
+
+		if err != nil {
+			return nil, err
+		}
+
+		return db, nil
+	}
+
+04. Buat file labs\09-gomariadb\main.go
+
+	package main
+
+	import (
+		"fmt"
+
+		"example.com/gomariadb/crud"
+	)
+
+	func main() {
+		db, err := crud.Connect()
+		if err != nil {
+			fmt.Println(err.Error())
+			return
+		}
+		defer db.Close()
+	}
+	
+05. Buat file labs\09-gomariadb\crud\select_all.go	
+	
+	package crud
+
+	import (
+		"fmt"
+		"log"
+	)
+
+	type City struct {
+		Id         int
+		Name       string
+		Population int
+	}
+
+	func SelectAll() {
+		db, err := Connect()
+		if err != nil {
+			fmt.Println(err.Error())
+			return
+		}
+		defer db.Close()
+
+		rows, err := db.Query("select * from cities")
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			var city City
+			err := rows.Scan(&city.Id, &city.Name, &city.Population)
+
+			if err != nil {
+				log.Fatal(err)
+			}
+			fmt.Printf("%v\n", city)
+		}
+	}
+	
+05. Buat file labs\09-gomariadb\crud\insert_row.go
+	
+	package crud
+
+	import (
+		"fmt"
+	)
+
+	func InsertRow() {
+		db, err := Connect()
+		if err != nil {
+			fmt.Println(err.Error())
+			return
+		}
+		defer db.Close()
+
+		_, err = db.Exec("insert into cities(id, name, population) values(?,?,?)", 4, "Denpasar", 100000)
+		if err != nil {
+			panic(err.Error())
+		}
+		fmt.Println("Insert Success")
+	}
+
+06. Buat file labs\09-gomariadb\crud\update_row.go
+
+	package main
+
+	import (
+		"example.com/gomariadb/crud"
+	)
+
+	func main() {
+		/*
+			db, err := crud.Connect()
+			if err != nil {
+				fmt.Println(err.Error())
+				return
+			}
+			defer db.Close()
+		*/
+		//crud.InsertRow()
+		crud.UpdateRow()
+		crud.SelectAll()
+	}
+
+07. Buat file labs\09-gomariadb\crud\delete_row.go
+
+	package crud
+
+	import (
+		"fmt"
+	)
+
+	func DeleteRow() {
+		db, err := Connect()
+		if err != nil {
+			fmt.Println(err.Error())
+			return
+		}
+		defer db.Close()
+
+		_, err = db.Exec("delete from cities where id = ?", 4)
+		if err != nil {
+			panic(err.Error())
+		}
+		fmt.Println("Delete Success")
+	}
+
+08. Buat file labs\09-gomariadb\main.go
+
+	package main
+
+	import (
+		"example.com/gomariadb/crud"
+	)
+
+	func main() {
+		/*
+			db, err := crud.Connect()
+			if err != nil {
+				fmt.Println(err.Error())
+				return
+			}
+			defer db.Close()
+		*/
+		crud.InsertRow()
+		crud.SelectAll()
+
+		crud.UpdateRow()
+		crud.SelectAll()
+
+		crud.DeleteRow()
+		crud.SelectAll()
+	}
+
+=== Go and Website ===
+
+01. Framework
+
+	LAMP : Linux Apache Mysql PHP
+	WAMP : Windows Apache Mysql PHP
+
+	MEAN : MongoDB Express.js Angular.js Node.js
+	MERN : MongoDB Express.js React.js Node.js
+
+02. Buat folder di labs\10-websimple
+	- Aktifkan folder tersebut sebagai project folder
+
+03. Buat file labs\10-websimple\main.go	
+
+	package main
+
+	import (
+		"fmt"
+		"net/http"
+	)
+
+	func main() {
+		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+			fmt.Fprintf(w, "Hello, James Bond. Anda tadi request %s\n", r.URL.Path)
+		})
+
+		http.ListenAndServe(":80", nil)
+	}
+
+04. Test
+	- Buka Web Browser
+		http://localhost
+		http://localhost/License To Kill
+		
+--- Website Middle
+- Belajar Template
+- Belajar static assets
+
+01. Buat folder di labs\11-webmiddle
+	- Aktifkan folder tersebut sebagai project folder
+
+	labs\11-webmiddle
+	        assets
+			views
+
+02. Buat file labs\11-webmiddle\assets\site.css
+
+	body {
+		font-family: "Helvetica Neue";
+		font-weight: bold;
+		font-size: 24px;
+		color: #07c;
+	}	
+
+03. Buat file labs\11-webmiddle\views\index.html
+
+	<!DOCTYPE html>
+	<html>
+
+	<head>
+		<title>{{.title}}</title>
+		<link rel="stylesheet" href="/static/site.css" />
+	</head>
+
+	<body>
+		<p>Welcome {{.name}}</p>
+	</body>
+
+	</html>
+
+05. Buat file labs\11-webmiddle\main.go
+
+	package main
+
+	import (
+		"fmt"
+		"html/template"
+		"net/http"
+		"path"
+	)
+
+	func main() {
+		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+			var filepath = path.Join("views", "index.html")
+			var tmpl, err = template.ParseFiles(filepath)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			var data = map[string]interface{}{
+				"title": "Learning Golang Web",
+				"name":  "James Bond",
+			}
+
+			err = tmpl.Execute(w, data)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
+		})
+
+		http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("assets"))))
+
+		fmt.Println("server started at localhost:9000")
+		http.ListenAndServe(":9000", nil)
+	}
+
+06. Run
+	- Buka Web Browser
+	- http://localhost:9000
+	
+--- Website DB Part 1
+
+01. Buat Database
+
+	$ mysql -u root -p
+	Enter password: Welcome1
+
+	MariaDB [(none)]> show databases;
+	MariaDB [(none)]> use hrd;
+	MariaDB [hrd]> show tables;
+	MariaDB [hrd]> CREATE TABLE employees(
+					id INT PRIMARY KEY AUTO_INCREMENT, 
+					name VARCHAR(35), 
+					salary INT
+				   );
+		   				   
+	MariaDB [hrd]> show tables;
+	MariaDB [hrd]> INSERT INTO employees(name, salary) 
+				   VALUES('Badu', 1500);	
+	MariaDB [hrd]> INSERT INTO employees(name, salary) 
+				   VALUES('Mince', 1700);				
+	MariaDB [hrd]> INSERT INTO employees(name, salary) 
+				   VALUES('Dorian', 1250);					   
+	MariaDB [hrd]> select * from employees;			   
+	
+		+----+--------+--------+
+		| id | name   | salary |
+		+----+--------+--------+
+		|  1 | Badu   |   1500 |
+		|  2 | Mince  |   1700 |
+		|  3 | Dorian |   1250 |
+		+----+--------+--------+
+		3 rows in set (0.000 sec)
+	
+	MariaDB [hrd]> exit
+
+02. Buat folder 
+	- Aktifkan folder 12-webdb1 di Visual Studio Code
+	
+	$ cd c:\labs
+	$ mkdir 12-webdb1
+	$ mkdir 12-webdb1\form
+
+03. Buat go.mod file
+
+	$ cd c:\labs\12-webdb1
+	$ go mod init example.com/websitedb1
+	$ go get github.com/go-sql-driver/mysql
+
+04. Buat file \form\index.html
+
+	{{ define "Index" }}
+		{{template "Header"}}
+		<table border="1">
+			<thead>
+				<tr>
+					<td>ID</td>
+					<td>Name</td>
+					<td>Salary</td>
+				</tr>
+			</thead>
+			<tbody>
+				{{range .}}
+				<tr>
+					<td>{{.Id}}</td>
+					<td>{{.Name}}</td>
+					<td>{{.Salary}}</td>               
+				</tr>
+				{{end}}
+			</tbody>
+		</table>
+		{{template "Footer"}}
+	{{end}}
+
+04. Buat file \form\Header.html
+
+	{{define "Header"}}
+	<!DOCTYPE html>
+	<html lang="en">
+	<head>
+		<title>Golang Example</title>
+	</head>
+	<body>
+	   <h1>Golang Website Database Example</h1> 
+	{{end}}
+
+05. Buat file \form\Footer.html
+
+	{{define "Footer"}}
+		</body>
+	</html>
+	{{end}}
+

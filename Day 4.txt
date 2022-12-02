@@ -282,7 +282,63 @@
 	- http://localhost:8080
 	- Tambahkan pegawai baru
 
+10. Edit file main.go
 
+	func Edit(w http.ResponseWriter, r *http.Request) {
+		db := dbConn()
+		nId := r.URL.Query().Get("id")
+		selDB, err := db.Query("SELECT * FROM Employees WHERE id=?", nId)
+		if err != nil {
+			panic(err.Error())
+		}
+		emp := Employee{}
+		for selDB.Next() {
+			var id, salary int
+			var name string
+			err = selDB.Scan(&id, &name, &salary)
+			if err != nil {
+				panic(err.Error())
+			}
+			emp.Id = id
+			emp.Name = name
+			emp.Salary = salary
+		}
+		tmpl.ExecuteTemplate(w, "Edit", emp)
+		defer db.Close()
+	}
 
+	func Update(w http.ResponseWriter, r *http.Request) {
+		db := dbConn()
+		if r.Method == "POST" {
+			name := r.FormValue("name")
+			salary := r.FormValue("salary")
+			id := r.FormValue("uid")
+			insForm, err := db.Prepare("UPDATE Employees SET name=?, salary=? WHERE id=?")
+			if err != nil {
+				panic(err.Error())
+			}
+			insForm.Exec(name, salary, id)
+			log.Println("UPDATE: Name: " + name + " | Salary: " + salary)
+		}
+		defer db.Close()
+		http.Redirect(w, r, "/", http.StatusMovedPermanently)
+	}
 
+	func main() {
+		log.Println("Server started on: http://localhost:8080")
+		http.HandleFunc("/", Index)
+		http.HandleFunc("/show", Show)
 
+		http.HandleFunc("/new", New)
+		http.HandleFunc("/insert", Insert)
+
+		http.HandleFunc("/edit", Edit)
+		http.HandleFunc("/update", Update)
+
+		http.ListenAndServe(":8080", nil)
+	}
+
+11. Run and Test
+	- Buka Web Browser
+	- http://localhost:8080
+	- Edit pegawai baru

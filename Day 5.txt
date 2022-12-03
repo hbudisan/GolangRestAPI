@@ -1266,6 +1266,57 @@
 		return r
 	}
 
+20. Let’s test it in Postman.
+	- Test Get Profile	--> Fail, karena diprotect
+	- Test Ping         --> Success, karena tidak diprotect
+	- Restart Program
+	
+	Method : GET
+	URI	   : localhost:8080/api/protected/profile
+	   
+		---  Reponse ---
+		"No Authorization header provided"
+
+	Method : GET
+	URI	   : localhost:8080/ping
+
+		---  Reponse ---
+		pong
+		
+21. Test : 
+	- Test Login
+	
+	Method : POST
+	URI	   : localhost:8080/api/public/login
+	Body -> Raw -> JSON :
+	   {
+			"Email" 	: "licensetokill@007.com",
+			"Password" 	: "secretagent"
+	   }
+
+		---  Reponse ---
+		{
+			"token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJFbWFpbCI6ImxpY2Vuc2V0b2tpbGxAMDA3LmNvbSIsImV4cCI6MTY3MDE0NDI5MiwiaXNzIjoiQXV0aFNlcnZpY2UifQ.B33wljs00QPbkv9guDSStEJKxArwMxmtHkIFTp4O6yk"
+		}
+
+	- Test Get Profile	
+	
+	Method : GET
+	URI	   : localhost:8080/api/protected/profile
+	Header : 
+		Key : Authorization 
+		Value  : Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJFbWFpbCI6ImxpY2Vuc2V0b2tpbGxAMDA3LmNvbSIsImV4cCI6MTY2MzA3NjcwNSwiaXNzIjoiQXV0aFNlcnZpY2UifQ.XAlqWoUBbVNwLPg9kd6K_emkCjePzzi6CL1m5-_bvNU
+	
+		---  Reponse ---
+		{
+			"ID": 1,
+			"CreatedAt": "2022-09-12T20:22:49.878807+07:00",
+			"UpdatedAt": "2022-09-12T20:22:49.878807+07:00",
+			"DeletedAt": null,
+			"name": "James Bond",
+			"email": "licensetokill@007.com",
+			"password": ""
+		}
 
 
 	

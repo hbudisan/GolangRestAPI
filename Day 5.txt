@@ -1,0 +1,947 @@
+--- REST Native 4 (Lanjutan) 
+
+08. Implement addProduct method 
+
+	func main() {
+		initDB()
+
+		http.HandleFunc("/", home)
+		http.HandleFunc("/get-products", getAllProducts)
+		http.HandleFunc("/get-product", getProductByID)
+		http.HandleFunc("/add-product", addProduct)
+
+		err := http.ListenAndServe(":8080", nil)
+
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+	}
+
+	func addProduct(res http.ResponseWriter, req *http.Request) {
+		if req.Method != "POST" {
+			message := []byte(`{"message": "Invalid http method"}`)
+			SetJSONResp(res, message, http.StatusMethodNotAllowed)
+			return
+		}
+		//Menampung body dari depan
+		var product Product
+
+		payload := req.Body
+
+		defer req.Body.Close()
+
+		err := json.NewDecoder(payload).Decode(&product)
+		if err != nil {
+			message := []byte(`{"message": "Error Parsing Data"}`)
+			SetJSONResp(res, message, http.StatusInternalServerError)
+			return
+		}
+		database[product.ID] = product
+		message := []byte(`{"message": "Success Create Product"}`)
+		SetJSONResp(res, message, http.StatusCreated)
+	}
+	
+09. Test Menggunakan Postman
+
+	Method	: POST
+	URI		: http://localhost:8080/add-product
+	Step	: Body -> Raw -> JSON
+			
+		{
+			"id": "003",
+			"name": "Kopi Luwak",
+			"quantity": 4
+		}		
+
+		-- Response
+		
+		{
+			"message": "Success Create Product"
+		}
+
+	Method	: GET
+	URI		: http://localhost:8080/get-products
+	 	
+		[
+			{
+				"id": "001",
+				"name": "Kopi Excelso",
+				"quantity": 10
+			},
+			{
+				"id": "002",
+				"name": "Kopi Aroma",
+				"quantity": 5
+			},
+			{
+				"id": "003",
+				"name": "Kopi Luwak",
+				"quantity": 4
+			}
+		]
+
+10. Implement updateProduct method 
+
+	func main() {
+		initDB()
+
+		http.HandleFunc("/", home)
+		http.HandleFunc("/get-products", getAllProducts)
+		http.HandleFunc("/get-product", getProductByID)
+		http.HandleFunc("/add-product", addProduct)
+		http.HandleFunc("/update-product", updateProduct)
+
+		err := http.ListenAndServe(":8080", nil)
+
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+	}
+
+	func updateProduct(res http.ResponseWriter, req *http.Request) {
+		if req.Method != "PUT" {
+			message := []byte(`{"message": "Invalid http method"}`)
+			SetJSONResp(res, message, http.StatusMethodNotAllowed)
+			return
+		}
+
+		if _, ok := req.URL.Query()["id"]; !ok {
+			message := []byte(`{"message": "Required product id"}`)
+			SetJSONResp(res, message, http.StatusBadRequest)
+			return
+		}
+
+		id := req.URL.Query()["id"][0]
+		product, ok := database[id]
+		if !ok {
+			message := []byte(`{"message": "product not found"}`)
+			SetJSONResp(res, message, http.StatusOK)
+			return
+		}
+
+		var newProduct Product
+
+		payload := req.Body
+
+		defer req.Body.Close()
+
+		err := json.NewDecoder(payload).Decode(&newProduct)
+		if err != nil {
+			message := []byte(`{"message": "error when parsing data"}`)
+			SetJSONResp(res, message, http.StatusInternalServerError)
+			return
+		}
+
+		product.Name = newProduct.Name
+		product.Quantity = newProduct.Quantity
+
+		database[product.ID] = product
+
+		productJSON, err := json.Marshal(&product)
+		if err != nil {
+			message := []byte(`{"message": "some error when parsing data"}`)
+			SetJSONResp(res, message, http.StatusInternalServerError)
+			return
+		}
+
+		SetJSONResp(res, productJSON, http.StatusOK)
+
+	}
+
+11. Test Menggunakan Postman
+
+	Method	: PUT
+	URI		: http://localhost:8080/update-product?id=002
+	Step	: Body -> Raw -> JSON
+	
+		{
+			"id": "002",
+			"name": "Kopi ABC",
+			"quantity": 2
+		}
+
+		-- Response
+		{
+			"id": "002",
+			"name": "Kopi ABC",
+			"quantity": 2
+		}
+
+	Method	: GET
+	URI		: http://localhost:8080/get-products
+	 	
+		[
+			{
+				"id": "001",
+				"name": "Kopi Excelso",
+				"quantity": 10
+			},
+			{
+				"id": "002",
+				"name": "Kopi ABC",
+				"quantity": 2
+			}
+		]
+
+12. Implement deleteProduct method 
+
+	func main() {
+		initDB()
+
+		http.HandleFunc("/", home)
+		http.HandleFunc("/get-products", getAllProducts)
+		http.HandleFunc("/get-product", getProductByID)
+		http.HandleFunc("/add-product", addProduct)
+		http.HandleFunc("/update-product", updateProduct)
+		http.HandleFunc("/delete-product", deleteProduct)
+
+		err := http.ListenAndServe(":8080", nil)
+
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+	}
+	
+	func deleteProduct(res http.ResponseWriter, req *http.Request) {
+
+		if req.Method != "DELETE" {
+			message := []byte(`{"message": "Invalid http method"}`)
+			SetJSONResp(res, message, http.StatusMethodNotAllowed)
+			return
+		}
+
+		if _, ok := req.URL.Query()["id"]; !ok {
+			message := []byte(`{"message": "Required product id"}`)
+			SetJSONResp(res, message, http.StatusBadRequest)
+			return
+		}
+
+		id := req.URL.Query()["id"][0]
+		product, ok := database[id]
+		if !ok {
+			message := []byte(`{"message": "product not found"}`)
+			SetJSONResp(res, message, http.StatusOK)
+			return
+		}
+
+		delete(database, id)
+
+		productJSON, err := json.Marshal(&product)
+		if err != nil {
+			message := []byte(`{"message": "some error when parsing data"}`)
+			SetJSONResp(res, message, http.StatusInternalServerError)
+			return
+		}
+
+		SetJSONResp(res, productJSON, http.StatusOK)
+
+	}
+
+13. Test Menggunakan Postman
+
+	Method	: DELETE
+	URI		: http://localhost:8080/delete-product?id=002
+		
+		{
+			"id": "002",
+			"name": "Kopi Aroma",
+			"quantity": 5
+		}
+
+	Method	: GET
+	URI		: http://localhost:8080/get-products
+	 	
+		[
+			{
+				"id": "001",
+				"name": "Kopi Excelso",
+				"quantity": 10
+			}
+		]
+
+=== Third Party Web Framework ===
+
+01. Googling : 7 popular web framework go
+
+	https://deepsource.io/blog/go-web-frameworks/
+
+02. - Gorilla/Mux
+	- Gin
+	
+=== REST API Gorilla/Mux Tahap 1 ===
+
+01. Create Project Folder
+
+	$ cd c:\labs
+	$ mkdir 19-rest-mux1
+	$ cd 19-rest-mux1
+	$ go mod init api-test
+	$ go get github.com/gorilla/mux
+
+02. Copy dari 17-rest-native3\main.go -> 19-rest-mux1\
+	- Edit jadi spt dibawah
+	
+	package main
+
+	import (
+		"log"
+		"net/http"
+
+		"github.com/gorilla/mux"
+	)
+
+	func home(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.Method {
+		case "GET":
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"message": "get called"}`))
+		case "POST":
+			w.WriteHeader(http.StatusCreated)
+			w.Write([]byte(`{"message": "post called"}`))
+		case "PUT":
+			w.WriteHeader(http.StatusAccepted)
+			w.Write([]byte(`{"message": "put called"}`))
+		case "DELETE":
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"message": "delete called"}`))
+		}
+	}
+
+	func main() {
+		r := mux.NewRouter()							==> PERUBAHAN
+		r.HandleFunc("/", home)							==> PERUBAHAN
+		log.Fatal(http.ListenAndServe(":8080", r))		==> PERUBAHAN
+	}
+
+03. Test dg Postman 
+	- Gunakan Method : GET, PUT, POST, DELETE, PATCH
+	
+=== REST API Gorilla/Mux Tahap 2 ===
+
+01. Create Project Folder
+
+	$ cd c:\labs
+	$ mkdir 20-rest-mux2
+	$ cd 20-rest-mux2
+	$ go mod init api-test
+	$ go get github.com/gorilla/mux
+
+02. Create file 20-rest-mux2\main.go
+
+	package main
+
+		import (
+			"log"
+			"net/http"
+
+			"github.com/gorilla/mux"
+		)
+
+		func main() {
+			r := mux.NewRouter()
+			r.HandleFunc("/", get).Methods(http.MethodGet)
+			r.HandleFunc("/", post).Methods(http.MethodPost)
+			r.HandleFunc("/", put).Methods(http.MethodPut)
+			r.HandleFunc("/", delete).Methods(http.MethodDelete)
+			log.Fatal(http.ListenAndServe(":8080", r))
+		}
+
+		func get(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"message": "get called"}`))
+		}
+
+		func post(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusCreated)
+			w.Write([]byte(`{"message": "post called"}`))
+		}
+
+		func put(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusAccepted)
+			w.Write([]byte(`{"message": "put called"}`))
+		}
+
+		func delete(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"message": "delete called"}`))
+		}
+	
+06. Run it again. Test it again with postman
+
+	$ go run main.go
+
+	URI: http://localhost:8080
+
+=== REST API Gorilla/Mux Tahap 3 ===
+
+01. Persiapan Database
+
+	C:> mysql -u root -p
+	Enter password: Welcome1
+
+	MariaDB [(none)]> show databases;
+	MariaDB [(none)]> create database sales;
+	MariaDB [(none)]> use sales;
+	MariaDB [sales]> CREATE TABLE products(
+						id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT, 
+						name VARCHAR(35), 
+						price INT UNSIGNED
+					   );	
+	MariaDB [sales]> INSERT INTO products(name, price) 
+					   VALUES('Kopi Excelso', 2500),
+							 ('Kopi Kapal Api', 1500),
+							 ('Kopi ABC', 2000);
+	MariaDB [sales]> select * from products;	
+	
+		+----+----------------+-------+
+		| id | name           | price |
+		+----+----------------+-------+
+		|  1 | Kopi Excelso   |  2500 |
+		|  2 | Kopi Kapal Api |  1500 |
+		|  3 | Kopi ABC       |  2000 |
+		+----+----------------+-------+
+		3 rows in set (0.001 sec)
+
+02. Website
+
+	http://gorm.io
+
+03. Create Project Folder
+
+	$ cd c:\labs
+	$ mkdir 21-rest-mux3
+	$ cd 21-rest-mux3
+	$ go mod init api-test
+	$ go get github.com/gorilla/mux
+	$ go get gorm.io/gorm
+	$ go get gorm.io/driver/mysql	
+	$ go get github.com/go-sql-driver/mysql	
+	
+04. Buat file 21-rest-mux3/main.go
+
+	package main
+
+	import (
+		"encoding/json"
+		"fmt"
+		"log"
+		"net/http"
+
+		"github.com/gorilla/mux"
+		"gorm.io/driver/mysql"
+		"gorm.io/gorm"
+	)
+
+	var DB *gorm.DB
+	var err error
+
+	type Product struct {
+		ID    uint   `json:"id"`
+		Name  string `json:"name"`
+		Price uint   `json:"price"`
+	}
+
+	func main() {
+		// Initialize Database
+		Connect("root:Welcome1@tcp(127.0.0.1:3306)/sales")
+
+		// Initialize the router
+		router := mux.NewRouter().StrictSlash(true)
+
+		// Register Routes
+		RegisterProductRoutes(router)
+
+		// Start the server
+		log.Println("Starting Server on port 8080")
+		log.Fatal(http.ListenAndServe(fmt.Sprintf(":%v", 8080), router))
+	}
+
+	func RegisterProductRoutes(router *mux.Router) {
+		router.HandleFunc("/api/products", GetProducts).Methods("GET")
+		router.HandleFunc("/api/products/{id}", GetProductById).Methods("GET")
+		router.HandleFunc("/api/products", CreateProduct).Methods("POST")
+		router.HandleFunc("/api/products/{id}", UpdateProduct).Methods("PUT")
+
+		router.HandleFunc("/api/products/{id}", DeleteProduct).Methods("DELETE")
+	}
+
+	func Connect(connectionString string) {
+		DB, err = gorm.Open(mysql.Open(connectionString), &gorm.Config{})
+		if err != nil {
+			log.Fatal(err)
+			panic("Cannot connect to DB")
+		}
+		log.Println("Connected to Database...")
+	}
+
+	func GetProducts(w http.ResponseWriter, r *http.Request) {
+		var products []Product
+		DB.Find(&products)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(products)
+	}
+
+	func checkIfProductExists(productId string) bool {
+		var product Product
+		DB.First(&product, productId)
+
+		return product.ID != 0
+	}
+
+	func GetProductById(w http.ResponseWriter, r *http.Request) {
+		productId := mux.Vars(r)["id"]
+		if !checkIfProductExists(productId) {
+			json.NewEncoder(w).Encode("Product Not Found!")
+			return
+		}
+		var product Product
+		DB.First(&product, productId)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(product)
+	}
+
+	func CreateProduct(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		var product Product
+		json.NewDecoder(r.Body).Decode(&product)
+		DB.Create(&product)
+		json.NewEncoder(w).Encode(product)
+	}
+
+	func UpdateProduct(w http.ResponseWriter, r *http.Request) {
+		productId := mux.Vars(r)["id"]
+		if !checkIfProductExists(productId) {
+			json.NewEncoder(w).Encode("Product Not Found!")
+			return
+		}
+		var product Product
+		DB.First(&product, productId)
+		json.NewDecoder(r.Body).Decode(&product)
+		DB.Save(&product)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(product)
+	}
+
+	func DeleteProduct(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		productId := mux.Vars(r)["id"]
+		if !checkIfProductExists(productId) {
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode("Product Not Found!")
+			return
+		}
+		var product Product
+		DB.Delete(&product, productId)
+		json.NewEncoder(w).Encode("Product Deleted Successfully!")
+	}
+
+
+05. Syncronize library
+	
+	$ go mod tidy
+		
+06. Test : Get All Products
+
+	Method	: GET
+	URI		: http://localhost:8080/api/products
+	
+		[
+			{
+				"id": 1,
+				"name": "Kopi Excelso",
+				"price": 2500
+			},
+			{
+				"id": 2,
+				"name": "Kopi Kapal Api",
+				"price": 1500
+			},
+			{
+				"id": 3,
+				"name": "Kopi ABC",
+				"price": 2000
+			}
+		]
+
+07. Test : Get Products By ID
+
+	Method	: GET
+	URI		: http://localhost:8080/api/products/2
+	
+		{
+			"id": 2,
+			"name": "Kopi Kapal Api",
+			"price": 1500
+		}
+
+08. Test : Add Products
+
+	Method	: POST
+	URI		: http://localhost:8080/api/products
+	Step	: Body -> Raw -> JSON	
+	
+		{
+			"name": "Kopi Starling",
+			"price": 3000
+		}
+
+		-- Response
+		{
+			"id": 4,
+			"name": "Kopi Starling",
+			"price": 3000
+		}
+		
+	Method	: GET
+	URI		: http://localhost:8080/api/products
+
+09. Test : Update Product By ID
+
+	Method	: PUT
+	URI		: http://localhost:8080/api/products/4
+	Step	: Body -> Raw -> JSON	
+	
+		{
+			"name": "Kopi Luwak",
+			"price": 3500
+		}
+
+		-- Response
+		{
+			"id": 4,
+			"name": "Kopi Luwak",
+			"price": 3500
+		}
+		
+	Method	: GET
+	URI		: http://localhost:8080/api/products	
+
+10. Test : Delete Product By ID
+
+	Method	: DELETE
+	URI		: http://localhost:8080/api/products/4
+
+		"Product Deleted Successfully!"
+		
+	Method	: GET
+	URI		: http://localhost:8080/api/products
+
+=== REST API Gin ===
+
+01. Create Project Folder
+
+	$ cd c:\labs
+	$ mkdir 22-rest-gin1
+	$ cd 22-rest-gin1
+	$ go mod init api-test
+	$ go get github.com/gin-gonic/gin
+
+02. Create file 22-rest-gin1\main.go
+	
+	package main
+
+	import (
+		"net/http"
+
+		"github.com/gin-gonic/gin"
+	)
+
+	func main() {
+		router := gin.Default()
+		router.GET("/", get)
+		router.POST("/", post)
+		router.PUT("/", put)
+		router.DELETE("/", delete)
+
+		router.Run("localhost:8080")
+	}
+
+	func get(c *gin.Context) {
+		c.IndentedJSON(http.StatusOK, "get called")
+	}
+
+	func post(c *gin.Context) {
+		c.IndentedJSON(http.StatusCreated, "post called")
+	}
+
+	func put(c *gin.Context) {
+		c.IndentedJSON(http.StatusAccepted, "put called")
+	}
+
+	func delete(c *gin.Context) {
+		c.IndentedJSON(http.StatusOK, "delete called")
+	}
+
+03. Run our server
+	
+	$ go run main.go
+	
+04. Test our app with postman, 
+	menggunakan semua method yg ada (GET, PUT, POST, DELETE)
+
+=== Go + Authentication ===
+
+01. Initiate the Go module
+
+	$ mkdir c:\labs\23-jwtapp
+	$ cd c:\labs\23-jwtapp
+	$ go mod init example.com/jwtapp
+
+02. Install the SQLite driver + gorm (Golang ORM)
+	- Database : SQLite  
+		https://www.sqlite.org/
+	- ORM : GORM
+		https://gorm.io/index.html	
+
+	$ cd c:\labs\23-jwtapp
+	$ go get -u gorm.io/gorm
+	$ go get -u gorm.io/driver/sqlite
+
+03. Initiate a global database object.
+
+	$ mkdir c:\labs\23-jwtapp\database
+	$ nano c:\labs\23-jwtapp\database\database.go
+	
+	package database
+
+	import (
+		"gorm.io/driver/sqlite"
+		"gorm.io/gorm"
+	)
+
+	// GlobalDB a global db object will be used across different packages
+	var GlobalDB *gorm.DB
+
+	// InitDatabase creates a sqlite db
+	func InitDatabase() (err error) {
+		GlobalDB, err = gorm.Open(sqlite.Open("auth.db"), &gorm.Config{})
+		if err != nil {
+			return
+		}
+
+		return
+	}	
+
+04. The user model
+	- The user model in our case is simple: 
+	  It has name, email, and password.
+	- The user password should be hashed in 
+	  the database : bcrypt library 
+	  https://pkg.go.dev/golang.org/x/crypto/bcrypt
+	
+	$ cd c:\labs\23-jwtapp\
+	$ go mod tidy	
+	$ go get "golang.org/x/crypto/bcrypt"
+
+05. Create the user model
+
+	$ mkdir c:\labs\23-jwtapp\models
+	$ nano c:\labs\23-jwtapp\models\models.go
+	
+	package models
+
+	import (
+		"github.com/hbudisan/jwtapp/database"
+
+		"golang.org/x/crypto/bcrypt"
+		"gorm.io/gorm"
+	)
+
+	// User defines the user in db
+	type User struct {
+		gorm.Model
+		Name     string `json:"name"`
+		Email    string `json:"email" gorm:"unique"`
+		Password string `json:"password"`
+	}
+
+	// CreateUserRecord creates a user record in the database
+	func (user *User) CreateUserRecord() error {
+		result := database.GlobalDB.Create(&user)
+		if result.Error != nil {
+			return result.Error
+		}
+
+		return nil
+	}
+
+	// HashPassword encrypts user password
+	func (user *User) HashPassword(password string) error {
+		bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
+		if err != nil {
+			return err
+		}
+
+		user.Password = string(bytes)
+
+		return nil
+	}
+
+	// CheckPassword checks user password
+	func (user *User) CheckPassword(providedPassword string) error {
+		err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(providedPassword))
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+=== Go + Authorization ===
+
+01. Official JWT Website
+
+	https://jwt.io/
+	
+02. Signing and validating a JWT
+	- To sign and validate JWT tokens in Golang, 
+	  we’re going to use the jwt-go package.
+
+	$ cd c:\labs\23-jwtapp\
+	$ go get -u github.com/golang-jwt/jwt/v4
+
+03. Create package auth
+
+	$ mkdir c:\labs\23-jwtapp\auth
+	$ nano c:\labs\23-jwtapp\auth\auth.go
+	
+	package auth
+
+	import (
+		"errors"
+		"time"
+
+		"github.com/golang-jwt/jwt/v4"
+	)
+
+	// JwtWrapper wraps the signing key and the issuer
+	type JwtWrapper struct {
+		SecretKey       string
+		Issuer          string
+		ExpirationHours int64
+	}
+
+	// JwtClaim adds email as a claim to the token
+	type JwtClaim struct {
+		Email string
+		jwt.StandardClaims
+	}
+
+	// GenerateToken generates a jwt token
+	func (j *JwtWrapper) GenerateToken(email string) (signedToken string, err error) {
+		claims := &JwtClaim{
+			Email: email,
+			StandardClaims: jwt.StandardClaims{
+				ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(j.ExpirationHours)).Unix(),
+				Issuer:    j.Issuer,
+			},
+		}
+
+		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+		signedToken, err = token.SignedString([]byte(j.SecretKey))
+		if err != nil {
+			return
+		}
+
+		return
+	}
+
+	//ValidateToken validates the jwt token
+	func (j *JwtWrapper) ValidateToken(signedToken string) (claims *JwtClaim, err error) {
+		token, err := jwt.ParseWithClaims(
+			signedToken,
+			&JwtClaim{},
+			func(token *jwt.Token) (interface{}, error) {
+				return []byte(j.SecretKey), nil
+			},
+		)
+
+		if err != nil {
+			return
+		}
+
+		claims, ok := token.Claims.(*JwtClaim)
+		if !ok {
+			err = errors.New("couldn't parse claims")
+			return
+		}
+
+		if claims.ExpiresAt < time.Now().Local().Unix() {
+			err = errors.New("JWT is expired")
+			return
+		}
+
+		return
+
+	}
+
+04. Create three RESTful API endpoints
+
+	[POST] /api/public/signup => creates the user
+	[POST] /api/public/login => logs the user in and returns a JWT
+	[GET]  /api/private/profile => authorizes the user and returns requested data
+	
+05. Install gin-gonic web framework.
+	- https://gin-gonic.com/
+	
+	$ cd c:\labs\23-jwtapp\
+	$ go get -u github.com/gin-gonic/gin
+
+06. Buat main.go
+	
+	package main
+
+	import (
+		"log"
+
+		"example.com/jwtapp/database"
+		"example.com/jwtapp/models"
+		"github.com/gin-gonic/gin"
+	)
+
+	func setupRouter() *gin.Engine {
+		r := gin.Default()
+
+		r.GET("/ping", func(c *gin.Context) {
+			c.String(200, "pong")
+		})
+
+		return r
+	}
+
+	func main() {
+		err := database.InitDatabase()
+		if err != nil {
+			log.Fatalln("could not create database", err)
+		}
+
+		database.GlobalDB.AutoMigrate(&models.User{})
+
+		r := setupRouter()
+		r.Run(":8080")
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	

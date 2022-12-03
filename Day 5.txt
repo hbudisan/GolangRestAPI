@@ -931,10 +931,174 @@
 		r.Run(":8080")
 	}
 
+07. Eksekusi main.go ==> FAILED
 
+	$ go run "c:\labs\23-jwtapp\main.go"
+		# github.com/mattn/go-sqlite3
+		cgo: C compiler "gcc" not found: exec: "gcc": executable file not found in %PATH%
 
+	Install tdm64-gcc-10.3.0-2.exe
+	- Klik create
 
+	Edit Env Variable
+	
+		PATH=C:\TDM-GCC-64\bin
 
+08. Ulangi lagi. Eksekusi main.go 
+
+	$ go run "c:\labs\23-jwtapp\main.go"
+	
+	http://localhost:8080/ping
+		pong
+		
+09. The signup
+
+	$ mkdir c:\labs\23-jwtapp\controllers
+	$ nano c:\labs\23-jwtapp\controllers\public.go
+	
+	package controllers
+
+	import (
+		"log"
+
+		"example.com/jwtapp/models"
+		"github.com/gin-gonic/gin"
+	)
+
+	// Signup creates a user in db
+	func Signup(c *gin.Context) {
+		var user models.User
+
+		err := c.ShouldBindJSON(&user)
+		if err != nil {
+			log.Println(err)
+
+			c.JSON(400, gin.H{
+				"msg": "invalid json",
+			})
+			c.Abort()
+
+			return
+		}
+
+		err = user.HashPassword(user.Password)
+		if err != nil {
+			log.Println(err.Error())
+
+			c.JSON(500, gin.H{
+				"msg": "error hashing password",
+			})
+			c.Abort()
+
+			return
+		}
+
+		err = user.CreateUserRecord()
+		if err != nil {
+			log.Println(err)
+
+			c.JSON(500, gin.H{
+				"msg": "error creating user",
+			})
+			c.Abort()
+
+			return
+		}
+
+		c.JSON(200, user)
+	}
+
+10. The Login. Edit public.go
+
+	// LoginPayload login body
+	type LoginPayload struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+
+	// LoginResponse token response
+	type LoginResponse struct {
+		Token string `json:"token"`
+	}
+
+	// Login logs users in
+	func Login(c *gin.Context) {
+		var payload LoginPayload
+		var user models.User
+
+		err := c.ShouldBindJSON(&payload)
+		if err != nil {
+			c.JSON(400, gin.H{
+				"msg": "invalid json",
+			})
+			c.Abort()
+			return
+		}
+
+		result := database.GlobalDB.Where("email = ?", payload.Email).First(&user)
+
+		if result.Error == gorm.ErrRecordNotFound {
+			c.JSON(401, gin.H{
+				"msg": "invalid user credentials",
+			})
+			c.Abort()
+			return
+		}
+
+		err = user.CheckPassword(payload.Password)
+		if err != nil {
+			log.Println(err)
+			c.JSON(401, gin.H{
+				"msg": "invalid user credentials",
+			})
+			c.Abort()
+			return
+		}
+
+		jwtWrapper := auth.JwtWrapper{
+			SecretKey:       "verysecretkey",
+			Issuer:          "AuthService",
+			ExpirationHours: 24,
+		}
+
+		signedToken, err := jwtWrapper.GenerateToken(user.Email)
+		if err != nil {
+			log.Println(err)
+			c.JSON(500, gin.H{
+				"msg": "error signing token",
+			})
+			c.Abort()
+			return
+		}
+
+		tokenResponse := LoginResponse{
+			Token: signedToken,
+		}
+
+		c.JSON(200, tokenResponse)
+	}
+
+11. Create our routes. Edit main.go
+	
+	func setupRouter() *gin.Engine {
+		r := gin.Default()
+
+		r.GET("/ping", func(c *gin.Context) {
+			c.String(200, "pong")
+		})
+		
+		//here
+		api := r.Group("/api")
+		{
+			public := api.Group("/public")
+			{
+				public.POST("/login", controllers.Login)
+				public.POST("/signup", controllers.Signup)
+			}
+		}
+
+		return r
+	}	
 
 
 

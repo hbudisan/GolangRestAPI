@@ -1100,11 +1100,171 @@
 		return r
 	}	
 
+12. Let’s test it in Postman.
+	- Test Signup
+	
+	Method : POST
+	URI	   : localhost:8080/api/public/signup
+	Body -> Raw -> JSON :
+	   {
+			"Email" 	: "licensetokill@007.com",
+			"Password" 	: "secretagent",
+			"Name"		: "James Bond"
+	   }
+	
+	--- Response ---
+	{
+		"ID": 1,
+		"CreatedAt": "2022-12-03T15:32:44.1887598+07:00",
+		"UpdatedAt": "2022-12-03T15:32:44.1887598+07:00",
+		"DeletedAt": null,
+		"name": "James Bond",
+		"email": "licensetokill@007.com",
+		"password": "$2a$14$HRncK/TRUjGEB6DmEitnq.b2qkHdjieAse3LPaC5wS8KfL6tZfUSi"
+	}
+	
+15. Check Database yg terbentuk dg DBeaver
+	- Buat koneksi ke sqlite3 database c:\labs\23-jwtapp\auth.db
 
+16. Let’s test it in Postman.
+	- Test Login
+	
+	Method : POST
+	URI	   : localhost:8080/api/public/login
+	Body -> Raw -> JSON :
+	   {
+			"Email" 	: "licensetokill@007.com",
+			"Password" 	: "secretagent"
+	   }
+	
+	--- Reponse ---
 
+	{
+		"token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJFbWFpbCI6ImxpY2Vuc2V0b2tpbGxAMDA3LmNvbSIsImV4cCI6MTY2MzA3NTU0NiwiaXNzIjoiQXV0aFNlcnZpY2UifQ.PvFq4FgFOZXlo27pklbRNfugAm8tEO_dPd5nIrIPq4g"
+	}
 
+17. The protected resource. The resource here would be a user profile. 
+	- Create c:\labs\23-jwtapp\controllers\protected.go
+	
+	package controllers
 
+	import (
+		"example.com/jwtapp/database"
+		"example.com/jwtapp/models"
+		"github.com/gin-gonic/gin"
+		"gorm.io/gorm"
+	)
 
+	// Profile returns user data
+	func Profile(c *gin.Context) {
+		var user models.User
+
+		email, _ := c.Get("email") // from the authorization middleware
+
+		result := database.GlobalDB.Where("email = ?", email.(string)).First(&user)
+
+		if result.Error == gorm.ErrRecordNotFound {
+			c.JSON(404, gin.H{
+				"msg": "user not found",
+			})
+			c.Abort()
+			return
+		}
+
+		if result.Error != nil {
+			c.JSON(500, gin.H{
+				"msg": "could not get user profile",
+			})
+			c.Abort()
+			return
+		}
+
+		user.Password = ""
+
+		c.JSON(200, user)
+	}
+
+	
+18. Create a package called middlewares and add the following code.	
+
+	$ mkdir c:\labs\23-jwtapp\middlewares
+	$ nano c:\labs\23-jwtapp\middlewares\authz.go
+	
+	package middlewares
+
+	import (
+		"strings"
+
+		"example.com/jwtapp/auth"
+		"github.com/gin-gonic/gin"
+	)
+
+	// Authz validates token and authorizes users
+	func Authz() gin.HandlerFunc {
+		return func(c *gin.Context) {
+			clientToken := c.Request.Header.Get("Authorization")
+			if clientToken == "" {
+				c.JSON(403, "No Authorization header provided")
+				c.Abort()
+				return
+			}
+
+			extractedToken := strings.Split(clientToken, "Bearer ")
+
+			if len(extractedToken) == 2 {
+				clientToken = strings.TrimSpace(extractedToken[1])
+			} else {
+				c.JSON(400, "Incorrect Format of Authorization Token")
+				c.Abort()
+				return
+			}
+
+			jwtWrapper := auth.JwtWrapper{
+				SecretKey: "verysecretkey",
+				Issuer:    "AuthService",
+			}
+
+			claims, err := jwtWrapper.ValidateToken(clientToken)
+			if err != nil {
+				c.JSON(401, err.Error())
+				c.Abort()
+				return
+			}
+
+			c.Set("email", claims.Email)
+
+			c.Next()
+
+		}
+	}
+
+19. Add a proper route in our main router and see the results ourselves in Postman.
+	- Edit main.go
+	
+	func setupRouter() *gin.Engine {
+		r := gin.Default()
+
+		r.GET("/ping", func(c *gin.Context) {
+			c.String(200, "pong")
+		})
+
+		api := r.Group("/api")
+		{
+			public := api.Group("/public")
+			{
+				public.POST("/login", controllers.Login)
+				public.POST("/signup", controllers.Signup)
+			}
+
+			// here
+			protected := api.Group("/protected").Use(middlewares.Authz())
+			{
+				protected.GET("/profile", controllers.Profile)
+			}
+		}
+
+		return r
+	}
 
 
 

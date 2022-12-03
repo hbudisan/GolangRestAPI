@@ -1,0 +1,22 @@
+{{ define "Index" }}
+{{template "Header"}}
+<table border="1">
+    <thead>
+        <tr>
+            <td>ID</td>
+            <td>Name</td>
+            <td>Salary</td>
+        </tr>
+    </thead>
+    <tbody>
+        {{range .}}
+        <tr>
+            <td>{{.Id}}</td>
+            <td>{{.Name}}</td>
+            <td>{{.Salary}}</td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>
+{{template "Footer"}}
+{{end}}

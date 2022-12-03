@@ -342,3 +342,340 @@
 	- Buka Web Browser
 	- http://localhost:8080
 	- Edit pegawai baru
+	
+12. Edit file main.go
+
+	func Delete(w http.ResponseWriter, r *http.Request) {
+		db := dbConn()
+		nId := r.URL.Query().Get("id")
+		_, err := db.Query("DELETE FROM Employees WHERE id=?", nId)
+		log.Println("DELETE")
+		if err != nil {
+			panic(err.Error())
+		}
+		defer db.Close()
+		http.Redirect(w, r, "/", http.StatusMovedPermanently)
+	}
+
+	func main() {
+		log.Println("Server started on: http://localhost:8080")
+		http.HandleFunc("/", Index)
+		http.HandleFunc("/show", Show)
+
+		http.HandleFunc("/new", New)
+		http.HandleFunc("/insert", Insert)
+
+		http.HandleFunc("/edit", Edit)
+		http.HandleFunc("/update", Update)
+
+		http.HandleFunc("/remove", Delete)
+
+		http.ListenAndServe(":8080", nil)
+	}
+	
+13. Run and Test
+	- Buka Web Browser
+	- http://localhost:8080
+	- Hapus pegawai baru	
+	
+=== Go and REST Web Service ===	
+
+--- REST Native 1
+	
+01. Buat folder di labs\15-rest-native1
+	- Aktifkan folder tersebut sebagai project folder
+
+02. Buat file labs\15-rest-native1\main.go	
+	
+	package main
+
+	import (
+		"log"
+		"net/http"
+	)
+
+	type server struct{}
+
+	func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"message": "Welcome to REST API"}`))
+	}
+
+	func main() {
+		s := &server{}
+		http.Handle("/", s)
+		log.Fatal(http.ListenAndServe(":8080", nil))
+	}
+	
+03. Install Postman	
+	- Postman-win64-Setup.exe
+	
+04. Test
+	- http://localhost:8080
+	- Test untuk method GET, POST, PUT, DELETE, PATCH dll
+	
+--- REST Native 2
+	
+01. Buat folder di labs\16-rest-native2
+	- Aktifkan folder tersebut sebagai project folder
+
+02. Copy main.go dari 15-rest-native1 ke 16-rest-native2
+	
+03. Edit file main.go	
+	
+	package main
+
+	import (
+		"log"
+		"net/http"
+	)
+
+	type server struct{}
+
+	func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.Method {
+		case "GET":
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"message": "get called"}`))
+		case "POST":
+			w.WriteHeader(http.StatusCreated)
+			w.Write([]byte(`{"message": "post called"}`))
+		case "PUT":
+			w.WriteHeader(http.StatusAccepted)
+			w.Write([]byte(`{"message": "put called"}`))
+		case "DELETE":
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"message": "delete called"}`))
+		}
+	}
+
+	func main() {
+		s := &server{}
+		http.Handle("/", s)
+		log.Fatal(http.ListenAndServe(":8080", nil))
+	}
+	
+04. Test
+	- http://localhost:8080
+	- Test untuk method GET, POST, PUT, DELETE, PATCH dll
+
+--- REST Native 3
+	
+01. Buat folder di labs\17-rest-native3
+	- Aktifkan folder tersebut sebagai project folder
+
+02. Copy main.go dari 16-rest-native2 ke 17-rest-native3
+	
+03. Edit file main.go		
+
+	package main
+
+	import (
+		"log"
+		"net/http"
+	)
+
+	func home(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.Method {
+		case "GET":
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"message": "get called"}`))
+		case "POST":
+			w.WriteHeader(http.StatusCreated)
+			w.Write([]byte(`{"message": "post called"}`))
+		case "PUT":
+			w.WriteHeader(http.StatusAccepted)
+			w.Write([]byte(`{"message": "put called"}`))
+		case "DELETE":
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"message": "delete called"}`))
+		}
+	}
+
+	func main() {
+		http.HandleFunc("/", home)
+		log.Fatal(http.ListenAndServe(":8080", nil))
+	}
+
+04. Test
+	- http://localhost:8080
+	- Test untuk method GET, POST, PUT, DELETE, PATCH dll
+	
+--- REST Native 4
+
+01. Buat folder di labs\18-rest-native4
+	- Aktifkan folder tersebut sebagai project folder
+
+02. Buat file 18-rest-native4\main.go
+
+	package main
+
+	import (
+		"fmt"
+		"net/http"
+		"os"
+	)
+
+	// Struct Product
+	type Product struct {
+		ID       string `json:"id"`
+		Name     string `json:"name"`
+		Quantity int    `json:"quantity"`
+	}
+
+	var (
+		database = make(map[string]Product)
+	)
+
+	func main() {
+		initDB()
+
+		http.HandleFunc("/", home)
+		err := http.ListenAndServe(":8080", nil)
+
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+	}
+
+	func initDB() {
+		database["001"] = Product{ID: "001", Name: "Kopi Excelso", Quantity: 10}
+		database["002"] = Product{ID: "002", Name: "Kopi Aroma", Quantity: 5}
+	}
+
+	func SetJSONResp(res http.ResponseWriter, message []byte, httpCode int) {
+		res.Header().Set("Content-type", "application/json")
+		res.WriteHeader(httpCode)
+		res.Write(message)
+	}
+
+	func home(res http.ResponseWriter, req *http.Request) {
+		message := []byte(`{"message": "server is up"}`)
+		SetJSONResp(res, message, http.StatusOK)
+	}
+
+03. Test
+	- http://localhost:8080
+	- Test untuk method GET, POST, PUT, DELETE, PATCH dll
+	- Akan keluar message : "server is up"
+
+04. Implement getAllProducts method
+
+	func main() {
+		initDB()
+
+		http.HandleFunc("/", home)
+		http.HandleFunc("/get-products", getAllProducts)
+
+		err := http.ListenAndServe(":8080", nil)
+
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+	}
+
+	func getAllProducts(res http.ResponseWriter, req *http.Request) {
+		if req.Method != "GET" {
+			message := []byte(`{"message": "Invalid http method"}`)
+			SetJSONResp(res, message, http.StatusMethodNotAllowed)
+			return
+		}
+		//Untuk mengkonversi data map database ke list
+		var products []Product
+
+		for _, product := range database {
+			products = append(products, product)
+		}
+
+		productJson, err := json.Marshal(&products)
+		if err != nil {
+			message := []byte(`{"message": "Error when parsing data"}`)
+			SetJSONResp(res, message, http.StatusInternalServerError)
+			return
+		}
+		SetJSONResp(res, productJson, http.StatusOK)
+	}
+
+05. Test Menggunakan Postman
+
+	Method	: GET
+	URI		: http://localhost:8080/get-products	
+
+		[
+			{
+				"id": "001",
+				"name": "Kopi Excelso",
+				"quantity": 10
+			},
+			{
+				"id": "002",
+				"name": "Kopi Aroma",
+				"quantity": 5
+			}
+		]	
+		
+06. Implement getProductByID method 
+
+	func main() {
+		initDB()
+
+		http.HandleFunc("/", home)
+		http.HandleFunc("/get-products", getAllProducts)
+		http.HandleFunc("/get-product", getProductByID)
+
+		err := http.ListenAndServe(":8080", nil)
+
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+	}
+	
+	func getProductByID(res http.ResponseWriter, req *http.Request) {
+		if req.Method != "GET" {
+			message := []byte(`{"message": "Invalid http method"}`)
+			SetJSONResp(res, message, http.StatusMethodNotAllowed)
+			return
+		}
+
+		//Validasi untuk manggil route harus pakai id
+		if _, ok := req.URL.Query()["id"]; !ok {
+			message := []byte(`{"message": "Required product id"}`)
+			SetJSONResp(res, message, http.StatusBadRequest)
+			return
+		}
+		id := req.URL.Query()["id"][0]
+		
+		//Validasi data product jika tidak sesuai id nya
+		product, ok := database[id]
+		if !ok {
+			message := []byte(`{"message": "product not found"}`)
+			SetJSONResp(res, message, http.StatusOK)
+			return
+		}
+
+		productJSON, err := json.Marshal(&product)
+		if err != nil {
+			message := []byte(`{"message": "some error when parsing data"}`)
+			SetJSONResp(res, message, http.StatusInternalServerError)
+			return
+		}
+
+		SetJSONResp(res, productJSON, http.StatusOK)
+	}	
+	
+07. Test Menggunakan Postman
+
+	Method	: GET
+	URI		: http://localhost:8080/get-product?id=002
+
+		{
+			"id": "002",
+			"name": "Kopi Aroma",
+			"quantity": 5
+		}
